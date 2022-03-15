@@ -47,7 +47,7 @@ class DataFileSet:
             low = self.file_edges[i]
             high = self.file_edges[i+1]
 
-            if (start < high and stop >= high) or (start <= low and stop > low):
+            if (start < high and stop >= high) or (start <= low and stop > low) or (low <= start and stop < high):
                 indices.append(i)
                 start_and_stop.append((0, high - low))
 
@@ -58,7 +58,6 @@ class DataFileSet:
                 if stop > low and stop < high:
                     last_entry = start_and_stop[-1]
                     start_and_stop[-1] = (last_entry[0], stop - low)
-
 
         files_to_use = [self.datafiles[i] for i in indices]
         return files_to_use, start_and_stop
@@ -71,10 +70,15 @@ class DataFileSet:
 
         assert split < nsplits
         step = self.nentries // nsplits
+
+        if step == 0:
+            raise ValueError("The number of splits is too fine for the number of events. Consider a smaller number of splits")
+
         start = step * split
         stop = step * (split + 1)
         if split == nsplits - 1:
             stop = self.nentries
+
         return (start, stop)
 
     def get_data(self, branches, split=None, nsplits=None):

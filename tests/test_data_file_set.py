@@ -70,6 +70,27 @@ class TestDataFile(unittest.TestCase):
             self.assertTrue(np.all(x == el["x"]))
             self.assertTrue(np.all(y == el["y"]))
 
+    def test_retrieve_all_data_five_splits(self):
+        data = datafiles.get_data(["x", "y"], split=0, nsplits=5)
+        step_size = ((len(x1) + len(x2) + len(x3))//5)
+
+        self.assertEqual(len(data), 1)
+        self.assertTrue(np.all(data[0]["x"] == x1[:step_size]))
+
+
+        all_xs = []
+        all_ys = []
+        for i in range(0, 5):
+            data = datafiles.get_data(["x", "y"], split=i, nsplits=5)
+            all_xs += [el["x"] for el in data]
+            all_ys += [el["y"] for el in data]
+        all_xs = np.concatenate(all_xs)
+        xs_concat = np.concatenate(xs)
+        self.assertTrue(np.all(all_xs == xs_concat))
+
+    def test_retrieve_all_data_thirty_splits(self):
+        self.assertRaises(ValueError, datafiles.get_data, ["x", "y"], 0, 30)
+
 
 
 if __name__ == "__main__":

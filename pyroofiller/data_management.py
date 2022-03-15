@@ -8,15 +8,15 @@ class DataFile:
         self.nentries = ur.open(filename)[treename].num_entries #get the number of entries
 
     def get_data(self, branches, start=None, stop=None):
-        return ur.open(self.filename)[self.treename].arrays(branches, entry_start=start, entry_stop=stop)
+        return ur.open(self.filename)[self.treename].arrays(branches, entry_start=start, entry_stop=stop, library="np")
 
 import glob
 
-def DataFileSet:
+class DataFileSet:
     def __init__(self, filewcards, treename):
         self.treename = treename
 
-        if not type(filewcard) == list:
+        if not type(filewcards) == list:
             self.filewcards = [filewcards]
         else:
             self.filewcards = filewcards
@@ -47,22 +47,28 @@ def DataFileSet:
             low = self.file_edges[i]
             high = self.file_edges[i+1]
 
-            if start <= low and high <= stop:
+            if (start < high and stop >= high) or (start <= low and stop > low):
                 indices.append(i)
-                start_and_stop.append((low, high))
+                start_and_stop.append((0, high - low))
 
-            if start > low and start < high:
-                last_entry = start_and_stop[-1]
-                start_and_stop[-1] = (start, last_entry[-1])
+                if start > low and start < high:
+                    last_entry = start_and_stop[-1]
+                    start_and_stop[-1] = (start - low, last_entry[-1])
 
-            if stop > low and stop < high:
-                last_entry = start_and_stop[-1]
-                start_and_stop[-1] = (last_entry[0], stop)
+                if stop > low and stop < high:
+                    last_entry = start_and_stop[-1]
+                    start_and_stop[-1] = (last_entry[0], stop - low)
+
 
         files_to_use = [self.datafiles[i] for i in indices]
         return files_to_use, start_and_stop
 
     def get_start_and_stop(self, split=0, nsplits=1):
+        if split is None:
+            split = 0
+        if nsplits is None:
+            nsplits = 1
+
         assert split < nsplits
         step = self.nentries // nsplits
         start = step * split
@@ -76,7 +82,7 @@ def DataFileSet:
         files, start_and_stop = self.get_intersecting_files(start=start, stop=stop)
         dataframes = []
         for f, (start, stop) in zip(files, start_and_stop):
-            dataframes.append(get_data(branches, start=start, stop=stop))
+            dataframes.append(f.get_data(branches, start=start, stop=stop))
         return dataframes
 
 
